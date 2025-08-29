@@ -1,0 +1,6 @@
+@HRCoreSuite.API_HostAddress = http://localhost:5043
+
+GET {{HRCoreSuite.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
