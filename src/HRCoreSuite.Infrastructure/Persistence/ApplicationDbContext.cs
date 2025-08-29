@@ -1,7 +1,7 @@
 using HRCoreSuite.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace HRCoreSuite.Infrastructure.Persistance;
+namespace HRCoreSuite.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext
 {

@@ -1,4 +1,4 @@
-using HRCoreSuite.Infrastructure.Persistance;
+using HRCoreSuite.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
