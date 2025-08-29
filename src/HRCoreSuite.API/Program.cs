@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using HRCoreSuite.Application.Interfaces.Persistence;
+using HRCoreSuite.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped<IBranchRepository, BranchRepository>();
+
+builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 
 builder.Services.AddControllers();
 
