@@ -6,6 +6,7 @@ using HRCoreSuite.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HRCoreSuite.Application.DTOs.Employee;
+using HRCoreSuite.Application.DTOs.Common;
 
 namespace HRCoreSuite.API.Controllers;
 
@@ -31,15 +32,75 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<EmployeeResponseDto>>> GetEmployees()
+    public async Task<ActionResult<PagedResponse<EmployeeResponseDto>>> GetEmployees(
+        [FromQuery] EmployeeQueryParameters queryParams)
     {
-        var employees = await _context.Employees
+
+        if (queryParams == null)
+        {
+            return BadRequest("Query parameters are required.");
+        }
+
+        var query = _context.Employees
             .Include(e => e.Branch)
             .Include(e => e.Position)
+            .AsQueryable();
+
+        if (queryParams.BranchId.HasValue)
+        {
+            query = query.Where(e => e.BranchId == queryParams.BranchId.Value);
+        }
+
+        if (queryParams.PositionId.HasValue)
+        {
+            query = query.Where(e => e.PositionId == queryParams.PositionId.Value);
+        }
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            query = query.Where(e => 
+                e.Name.Contains(queryParams.Search) || 
+                e.EmployeeNumber.Contains(queryParams.Search));
+        }
+
+        if (!string.IsNullOrEmpty(queryParams.SortBy))
+        {
+            var sortOrder = queryParams.SortOrder ?? "asc";
+
+            if (queryParams.SortBy.Equals("name", StringComparison.OrdinalIgnoreCase))
+            {
+                query = sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderByDescending(e => e.Name)
+                    : query.OrderBy(e => e.Name);
+            }
+            else if (queryParams.SortBy.Equals("contractEndDate", StringComparison.OrdinalIgnoreCase))
+            {
+                query = sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderByDescending(e => e.ContractEndDate)
+                    : query.OrderBy(e => e.ContractEndDate);
+            }
+        }
+        else
+        {
+            query = query.OrderBy(e => e.Name);
+        }
+
+        var totalItems = await query.CountAsync();
+
+        var employees = await query
+            .Skip((queryParams.Page - 1) * queryParams.PageSize)
+            .Take(queryParams.PageSize)
             .ToListAsync();
 
         var employeeDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
-        return Ok(employeeDtos);
+
+        var pagedResponse = new PagedResponse<EmployeeResponseDto>(
+            employeeDtos, 
+            queryParams.Page, 
+            queryParams.PageSize, 
+            totalItems);
+
+        return Ok(pagedResponse);
     }
 
     [HttpGet("{id}")]
@@ -52,7 +113,7 @@ public class EmployeeController : ControllerBase
 
         if (employee == null)
         {
-            return NotFound();
+            return NotFound("Employee with ID " + id +  " not found.");
         }
 
         var employeeDto = _mapper.Map<EmployeeResponseDto>(employee);
@@ -75,20 +136,20 @@ public class EmployeeController : ControllerBase
 
         _context.Employees.Add(employeeEntity);
         await _context.SaveChangesAsync();
-        
+
         var createdEmployee = await _context.Employees
             .Include(e => e.Branch)
             .Include(e => e.Position)
             .FirstAsync(e => e.Id == employeeEntity.Id);
 
         var employeeResponseDto = _mapper.Map<EmployeeResponseDto>(createdEmployee);
-        
+
         return CreatedAtAction(nameof(GetEmployeeById), new { id = employeeResponseDto.Id }, employeeResponseDto);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(
-        Guid id, 
+        Guid id,
         UpdateEmployeeDto updateDto,
         [FromServices] IEmployeeRepository employeeRepo,
         [FromServices] IBranchRepository branchRepo,
@@ -97,7 +158,7 @@ public class EmployeeController : ControllerBase
         var employeeEntity = await _context.Employees.FindAsync(id);
         if (employeeEntity == null)
         {
-            return NotFound();
+            return NotFound("Employee with ID " + id +  " not found.");
         }
 
         if (!await employeeRepo.IsEmployeeNumberUniqueAsync(updateDto.EmployeeNumber, id, CancellationToken.None))
@@ -133,12 +194,30 @@ public class EmployeeController : ControllerBase
 
         if (employee == null)
         {
-            return NotFound();
+            return NotFound("Employee with ID " + id +  " not found.");
         }
 
         _context.Employees.Remove(employee);
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+    
+    [HttpGet("expiring-contracts")]
+    public async Task<ActionResult<IEnumerable<EmployeeResponseDto>>> GetExpiringContracts(
+        [FromQuery] int daysUntilExpiry = 30)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var targetDate = today.AddDays(daysUntilExpiry);
+
+        var expiringEmployees = await _context.Employees
+            .Include(e => e.Branch)
+            .Include(e => e.Position)
+            .Where(e => e.ContractEndDate >= today && e.ContractEndDate <= targetDate)
+            .OrderBy(e => e.ContractEndDate)
+            .ToListAsync();
+
+        var employeeDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(expiringEmployees);
+        return Ok(employeeDtos);
     }
 }

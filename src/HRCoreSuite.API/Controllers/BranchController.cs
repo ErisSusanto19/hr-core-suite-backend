@@ -35,7 +35,7 @@ public class BranchController : ControllerBase
 
         if (branch == null)
         {
-            return NotFound();
+            return NotFound("Branch with ID " + id +  " not found.");
         }
 
         var branchDto = _mapper.Map<BranchResponseDto>(branch);
@@ -62,7 +62,7 @@ public class BranchController : ControllerBase
 
         if (branchEntity == null)
         {
-            return NotFound();
+            return NotFound("Branch with ID " + id +  " not found.");
         }
 
         _mapper.Map(updateDto, branchEntity);
@@ -79,7 +79,7 @@ public class BranchController : ControllerBase
 
         if (branchEntity == null)
         {
-            return NotFound();
+            return NotFound("Branch with ID " + id + " not found.");
         }
 
         _context.Branches.Remove(branchEntity);

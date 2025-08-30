@@ -35,7 +35,7 @@ public class PositionController : ControllerBase
 
         if (position == null)
         {
-            return NotFound();
+            return NotFound("Position with ID " + id +  " not found.");
         }
 
         var positionDto = _mapper.Map<PositionResponseDto>(position);
@@ -61,7 +61,7 @@ public class PositionController : ControllerBase
 
         if (positonEntity == null)
         {
-            return NotFound();
+            return NotFound("Position with ID " + id +  " not found.");
         }
 
         _mapper.Map(request, positonEntity);
@@ -78,7 +78,7 @@ public class PositionController : ControllerBase
 
         if (positonEntity == null)
         {
-            return NotFound();
+            return NotFound("Position with ID " + id +  " not found.");
         }
 
         _context.Positions.Remove(positonEntity);

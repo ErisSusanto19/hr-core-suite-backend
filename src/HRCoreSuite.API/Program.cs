@@ -6,6 +6,9 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HRCoreSuite.Application.Interfaces.Persistence;
 using HRCoreSuite.Infrastructure.Persistence.Repositories;
+using HRCoreSuite.API.Filters;
+using HRCoreSuite.Application.DTOs.Common;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +21,28 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>(); 
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiResponseWrapperFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(e => e.Value != null && e.Value.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        var apiResponse = ApiResponse<object>.FailResponse(errors);
+
+        return new BadRequestObjectResult(apiResponse);
+    };
+});
 
 builder.Services.AddFluentValidationAutoValidation();
 
