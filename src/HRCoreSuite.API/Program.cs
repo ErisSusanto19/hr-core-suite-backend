@@ -18,6 +18,8 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>(); 
+
 builder.Services.AddControllers();
 
 builder.Services.AddFluentValidationAutoValidation();

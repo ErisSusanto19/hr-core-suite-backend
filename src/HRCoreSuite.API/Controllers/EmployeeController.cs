@@ -60,60 +60,67 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<EmployeeResponseDto>> CreateEmployee(CreateEmployeeDto createDto)
+    public async Task<ActionResult<EmployeeResponseDto>> CreateEmployee(
+        [FromServices] IValidator<CreateEmployeeDto> validator,
+        CreateEmployeeDto request)
     {
 
-        if (!await _branchRepository.ExistsAsync(createDto.BranchId, CancellationToken.None))
-        {
-            ModelState.AddModelError(nameof(createDto.BranchId), "Cabang yang dipilih tidak valid atau tidak ditemukan.");
-            return BadRequest(ModelState);
-        }
+        var validationResult = await validator.ValidateAsync(request, options => options.IncludeRuleSets("async"));
 
-        if (!await _positionRepository.ExistsAsync(createDto.PositionId, CancellationToken.None))
+        if (!validationResult.IsValid)
         {
-            ModelState.AddModelError(nameof(createDto.PositionId), "Jabatan yang dipilih tidak valid atau tidak ditemukan.");
-            return BadRequest(ModelState);
+            return BadRequest(validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
         }
-
-        var employeeEntity = _mapper.Map<Employee>(createDto);
+        var employeeEntity = _mapper.Map<Employee>(request);
 
         _context.Employees.Add(employeeEntity);
         await _context.SaveChangesAsync();
-
+        
         var createdEmployee = await _context.Employees
             .Include(e => e.Branch)
             .Include(e => e.Position)
             .FirstAsync(e => e.Id == employeeEntity.Id);
 
         var employeeResponseDto = _mapper.Map<EmployeeResponseDto>(createdEmployee);
-
+        
         return CreatedAtAction(nameof(GetEmployeeById), new { id = employeeResponseDto.Id }, employeeResponseDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(Guid id, UpdateEmployeeDto request)
+    public async Task<IActionResult> UpdateEmployee(
+        Guid id, 
+        UpdateEmployeeDto updateDto,
+        [FromServices] IEmployeeRepository employeeRepo,
+        [FromServices] IBranchRepository branchRepo,
+        [FromServices] IPositionRepository positionRepo)
     {
         var employeeEntity = await _context.Employees.FindAsync(id);
-
         if (employeeEntity == null)
         {
             return NotFound();
         }
 
-        if (!await _branchRepository.ExistsAsync(request.BranchId, CancellationToken.None))
+        if (!await employeeRepo.IsEmployeeNumberUniqueAsync(updateDto.EmployeeNumber, id, CancellationToken.None))
         {
-            ModelState.AddModelError(nameof(request.BranchId), "Cabang yang dipilih tidak valid atau tidak ditemukan.");
+            ModelState.AddModelError(nameof(updateDto.EmployeeNumber), "NIP sudah terdaftar.");
+        }
+
+        if (!await branchRepo.ExistsAsync(updateDto.BranchId, CancellationToken.None))
+        {
+            ModelState.AddModelError(nameof(updateDto.BranchId), "Cabang yang dipilih tidak valid atau tidak ditemukan.");
+        }
+
+        if (!await positionRepo.ExistsAsync(updateDto.PositionId, CancellationToken.None))
+        {
+            ModelState.AddModelError(nameof(updateDto.PositionId), "Jabatan yang dipilih tidak valid atau tidak ditemukan.");
+        }
+
+        if (!ModelState.IsValid)
+        {
             return BadRequest(ModelState);
         }
 
-        if (!await _positionRepository.ExistsAsync(request.PositionId, CancellationToken.None))
-        {
-            ModelState.AddModelError(nameof(request.PositionId), "Jabatan yang dipilih tidak valid atau tidak ditemukan.");
-            return BadRequest(ModelState);
-        }
-
-        _mapper.Map(request, employeeEntity);
-
+        _mapper.Map(updateDto, employeeEntity);
         await _context.SaveChangesAsync();
 
         return NoContent();
