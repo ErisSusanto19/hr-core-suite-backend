@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HRCoreSuite.Application.DTOs.Employee;
 using HRCoreSuite.Application.DTOs.Common;
+using System.Net;
+using ClosedXML.Excel;
 
 namespace HRCoreSuite.API.Controllers;
 
@@ -58,8 +60,8 @@ public class EmployeeController : ControllerBase
 
         if (!string.IsNullOrEmpty(queryParams.Search))
         {
-            query = query.Where(e => 
-                e.Name.Contains(queryParams.Search) || 
+            query = query.Where(e =>
+                e.Name.Contains(queryParams.Search) ||
                 e.EmployeeNumber.Contains(queryParams.Search));
         }
 
@@ -95,9 +97,9 @@ public class EmployeeController : ControllerBase
         var employeeDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
 
         var pagedResponse = new PagedResponse<EmployeeResponseDto>(
-            employeeDtos, 
-            queryParams.Page, 
-            queryParams.PageSize, 
+            employeeDtos,
+            queryParams.Page,
+            queryParams.PageSize,
             totalItems);
 
         return Ok(pagedResponse);
@@ -113,7 +115,7 @@ public class EmployeeController : ControllerBase
 
         if (employee == null)
         {
-            return NotFound("Employee with ID " + id +  " not found.");
+            return NotFound("Employee with ID " + id + " not found.");
         }
 
         var employeeDto = _mapper.Map<EmployeeResponseDto>(employee);
@@ -158,7 +160,7 @@ public class EmployeeController : ControllerBase
         var employeeEntity = await _context.Employees.FindAsync(id);
         if (employeeEntity == null)
         {
-            return NotFound("Employee with ID " + id +  " not found.");
+            return NotFound("Employee with ID " + id + " not found.");
         }
 
         if (!await employeeRepo.IsEmployeeNumberUniqueAsync(updateDto.EmployeeNumber, id, CancellationToken.None))
@@ -194,7 +196,7 @@ public class EmployeeController : ControllerBase
 
         if (employee == null)
         {
-            return NotFound("Employee with ID " + id +  " not found.");
+            return NotFound("Employee with ID " + id + " not found.");
         }
 
         _context.Employees.Remove(employee);
@@ -202,7 +204,7 @@ public class EmployeeController : ControllerBase
 
         return NoContent();
     }
-    
+
     [HttpGet("expiring-contracts")]
     public async Task<ActionResult<IEnumerable<EmployeeResponseDto>>> GetExpiringContracts(
         [FromQuery] int daysUntilExpiry = 30)
@@ -219,5 +221,130 @@ public class EmployeeController : ControllerBase
 
         var employeeDtos = _mapper.Map<IEnumerable<EmployeeResponseDto>>(expiringEmployees);
         return Ok(employeeDtos);
+    }
+    
+    [HttpPost("upload")]
+    [ProducesResponseType(typeof(object), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    public async Task<IActionResult> UploadEmployees(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("Tidak ada file yang diunggah.");
+        }
+
+        var successCount = 0;
+        var failCount = 0;
+        var errors = new List<string>();
+
+        using (var stream = new MemoryStream())
+        {
+            await file.CopyToAsync(stream);
+
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var worksheet = workbook.Worksheet(1);
+                if (worksheet == null)
+                {
+                    return BadRequest("File Excel tidak berisi worksheet.");
+                }
+
+                var rows = worksheet.RowsUsed().Skip(1);
+
+                foreach (var row in rows)
+                {
+                    var rowNumber = row.RowNumber();
+                    try
+                    {
+
+                        var employeeNumber = row.Cell(1).GetValue<string>().Trim();
+                        var name = row.Cell(2).GetValue<string>().Trim();
+
+                        var contractStartDateVal = row.Cell(3).GetValue<DateTime>();
+                        var contractEndDateVal = row.Cell(4).GetValue<DateTime>();
+
+                        var branchIdStr = row.Cell(5).GetValue<string>().Trim();
+                        var positionIdStr = row.Cell(6).GetValue<string>().Trim();
+
+                        if (string.IsNullOrEmpty(employeeNumber))
+                        {
+                           errors.Add($"Baris {rowNumber}: NIP kosong, baris dilewati.");
+                           failCount++;
+                           continue;
+                        }
+
+                        var existingEmployee = await _context.Employees
+                                                   .FirstOrDefaultAsync(e => e.EmployeeNumber == employeeNumber);
+                        
+                        var employeeData = new 
+                        {
+                            EmployeeNumber = employeeNumber,
+                            Name = name,
+                            ContractStartDate = DateOnly.FromDateTime(contractStartDateVal),
+                            ContractEndDate = DateOnly.FromDateTime(contractEndDateVal),
+                            BranchId = Guid.Parse(branchIdStr),
+                            PositionId = Guid.Parse(positionIdStr)
+                        };
+                        
+                        if (existingEmployee != null)
+                        {
+                            existingEmployee.Name = employeeData.Name;
+                            existingEmployee.ContractStartDate = employeeData.ContractStartDate;
+                            existingEmployee.ContractEndDate = employeeData.ContractEndDate;
+                            existingEmployee.BranchId = employeeData.BranchId;
+                            existingEmployee.PositionId = employeeData.PositionId;
+                        }
+                        else
+                        {
+                            var newEmployee = new Employee
+                            {
+                                EmployeeNumber = employeeData.EmployeeNumber,
+                                Name = employeeData.Name,
+                                ContractStartDate = employeeData.ContractStartDate,
+                                ContractEndDate = employeeData.ContractEndDate,
+                                BranchId = employeeData.BranchId,
+                                PositionId = employeeData.PositionId
+                            };
+                            _context.Employees.Add(newEmployee);
+                        }
+                        
+                        successCount++;
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        failCount++;
+                        var innerExceptionMessage = ex.InnerException?.Message ?? ex.Message;
+                        errors.Add($"Baris {rowNumber}: Error Database - {innerExceptionMessage}");
+                        _context.ChangeTracker.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        failCount++;
+                        errors.Add($"Baris {rowNumber}: Terjadi error - {ex.Message}");
+                    }
+                }
+            }
+        }
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            return BadRequest(new 
+            {
+                Message = "Gagal menyimpan data ke database. Seluruh transaksi dibatalkan.",
+                Detail = ex.InnerException?.Message ?? ex.Message
+            });
+        }
+
+        return Ok(new
+        {
+            Message = "Proses unggah file selesai.",
+            SuccessfulRows = successCount,
+            FailedRows = failCount,
+            Errors = errors
+        });
     }
 }
