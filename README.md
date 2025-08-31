@@ -1,132 +1,146 @@
 # HR-Core Suite
 
-**HR-Core Suite** is a modern Human Resource Information System (HRIS) platform designed to serve as the central hub for managing HR data and processes in an organization. The project is built with a solid foundation for scalability, starting with the essential modules: Master Data Management and Employee Contracts.
+**HR-Core Suite** is the backend for a modern Human Resource Information System (HRIS) platform, designed to serve as the central hub for managing HR data and processes in an organization securely and efficiently. The project is built on .NET 8 with Clean Architecture principles to ensure scalability, maintainability, and robustness.
+
+This first phase focuses on core features: Employee Master Data Management, Contract Tracking, and a secure JWT-based Authentication system.
 
 ---
 
 ## Table of Contents
 
-1. [About the Project](#about-the-project)
-2. [Architecture](#architecture)
-3. [Built With](#built-with)
-4. [Getting Started](#getting-started)
-   * [Prerequisites](#prerequisites)
-   * [Installation](#installation)
-5. [Development Roadmap](#development-roadmap)
-6. [Contributing](#contributing)
+1.  [About the Project](#about-the-project)
+2.  [Core Features](#core-features)
+3.  [Architecture & Technology](#architecture--technology)
+4.  [Getting Started](#getting-started)
+    *   [Prerequisites](#prerequisites)
+    *   [Installation & Setup](#installation--setup)
+5.  [API Structure & Usage](#api-structure--usage)
+    *   [Authentication](#authentication)
+    *   [Interactive Documentation (Swagger)](#interactive-documentation-swagger)
+6.  [Development Roadmap](#development-roadmap)
 
 ---
 
 ## About the Project
 
-The main goal of **HR-Core Suite** is to transform HR operations from manual, error-prone processes into an automated, centralized, and data-driven system.
+The main goal of **HR-Core Suite** is to transform HR operations from manual processes into an automated, centralized, and data-driven system, while maintaining data security and integrity.
 
 **For HR & Management Teams:**
-
-* **Data Centralization:** A single source of truth for all employee data, from personal information and job history to contract details.
-* **Proactive Monitoring:** Receive automatic notifications and reports for expiring employee contracts, reducing the risk of oversight.
-* **Operational Efficiency:** Speed up onboarding and bulk updates through Excel import features.
-* **Decision Support:** Provide accurate and structured data as a foundation for future HR analytics.
+*   **Single Source of Truth:** Centralized data for employees, branches, and job positions.
+*   **Proactive Monitoring:** A flexible API to track expiring employee contracts.
+*   **Operational Efficiency:** Batch processing feature to add or update thousands of employee records at once via Excel file upload.
+*   **Powerful Search:** Advanced search, filtering, sorting, and pagination capabilities to manage large volumes of employee data.
 
 **For Development Teams:**
-
-* **Modern & Scalable:** Built on .NET 8 with Clean Architecture, ensuring the codebase is maintainable, testable, and extendable.
-* **API-First:** Designed with an API-first approach, enabling integration with various frontends (Web, Mobile) or third-party systems.
-* **Clear Documentation:** Structured documentation to make onboarding new developers easier.
-
----
-
-## Architecture
-
-This project adopts the **Clean Architecture** principle to separate business logic from implementation details. The application is structured into several main layers:
-
-* **Domain:** The core of the application, containing business entities (e.g., `Employee`, `Contract`) and fundamental business rules.
-* **Application:** Contains application logic and workflows (use cases), such as data validation and employee data storage.
-* **Infrastructure:** Provides technical implementations for external services such as database access (via Entity Framework Core), file systems, or notification services.
-* **API (Presentation):** The outermost layer exposing application functionality through RESTful API endpoints.
-
-This separation ensures flexibility and adaptability to future technology changes.
+*   **Modern & Scalable:** Built on .NET 8 with Clean Architecture.
+*   **Secure:** Implemented JWT Bearer authentication and role-based authorization.
+*   **Robust:** Features advanced data validation (FluentValidation), global error handling, and a consistent API response structure.
+*   **Well-Documented:** Self-documenting interactive API powered by Swagger/OpenAPI.
 
 ---
 
-## Built With
+## Core Features
 
-* **Backend:** [.NET 8](https://dotnet.microsoft.com/en-us/)
-* **API Framework:** [ASP.NET Core](https://dotnet.microsoft.com/en-us/apps/aspnet)
-* **Database:** [SQL Server](https://www.microsoft.com/en-us/sql-server)
-* **ORM:** [Entity Framework Core 8](https://docs.microsoft.com/en-us/ef/core/)
+*   **Entity Management:** Full CRUD APIs for Employees, Branches, and Positions.
+*   **Authentication & Authorization:**
+    *   Internal user registration and JWT-based login system.
+    *   Endpoints secured using `[Authorize]` attribute.
+    *   Role system with initial data seeding for `Super_Admin` and `HR_Admin`.
+*   **Advanced Employee Features:**
+    *   Specific endpoint `GET /api/employee/expiring-contracts` for contract monitoring.
+    *   Full-text search, filtering by branch/position, dynamic sorting, and pagination.
+*   **Batch Processing:** `POST /api/employee/upload` endpoint to process data from Excel files, complete with "upsert" logic and row-by-row error reporting.
+*   **Standardized Response Architecture:** All API responses (both success and failure) are wrapped in a consistent JSON format for easy frontend integration.
+
+---
+
+## Architecture & Technology
+
+This project adopts **Clean Architecture** principles to separate business logic from implementation details.
+
+*   **Domain:** Core business entities and fundamental rules.
+*   **Application:** Application logic, DTOs, Interfaces, Validators (FluentValidation), and mapping profiles (AutoMapper).
+*   **Infrastructure:** Technical implementations like database access (EF Core), external services, and data seeding.
+*   **API (Presentation):** The outermost layer exposing functionality through RESTful API endpoints, complete with middleware and filters.
+
+**Key Technologies:**
+*   **Framework:** .NET 8 / ASP.NET Core
+*   **Database:** SQL Server
+*   **ORM:** Entity Framework Core 8
+*   **Validation:** FluentValidation
+*   **Object Mapping:** AutoMapper
+*   **Security:** JWT Bearer Authentication
+*   **Excel Processing:** ClosedXML
 
 ---
 
 ## Getting Started
 
-Follow the steps below to run this project locally.
-
 ### Prerequisites
 
-Ensure your machine has the following installed:
+*   [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+*   [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Express or Developer Edition)
+*   Git
 
-* [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-* [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Express or Developer Edition is sufficient)
-* Git
+### Installation & Setup
 
-### Installation
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/ErisSusanto19/hr-core-suite-backend
+    cd [hr-core-suite-backend]
+    ```
 
-1. **Clone the repository:**
+2.  **Configure the Database:**
+    *   Open `appsettings.Development.json` in the `HRCoreSuite.API` project.
+    *   Ensure the `ConnectionString` matches your local SQL Server configuration.
 
-   ```bash
-   git clone https://github.com/ErisSusanto19/hr-core-suite-backend
-   cd hr-core-suite-backend
-   ```
+3.  **Apply Database Migrations:**
+    *   Open a terminal in the backend's root directory.
+    *   Run the following command. This will create the database, apply all schemas, and run the data seeder (creating the `admin` user and roles).
+    ```bash
+    dotnet ef database update --startup-project src/HRCoreSuite.API
+    ```
 
-2. **Configure the Database:**
+4.  **Run the Application:**
+    *   Run the following command from the backend's root directory:
+    ```bash
+    dotnet run --project src/HRCoreSuite.API --launch-profile https
+    ```
+    *   The API application is now running.
 
-   * Open `appsettings.Development.json` in the `HRCoreSuite.API` project.
-   * Update the `ConnectionString` to match your local SQL Server configuration.
+---
 
-   ```json
-   "ConnectionStrings": {
-     "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=HRCoreSuiteDB;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=true"
-   }
-   ```
+## API Structure & Usage
 
-3. **Apply Database Migrations:**
+### Authentication
 
-   * Open a terminal or command prompt in the `HRCoreSuite.API` directory.
-   * Run the following command to create the database and tables:
+1.  **Initial Login:** Use the `POST /api/auth/login` endpoint with the default seeded credentials to get a JWT:
+    *   **Username:** `admin`
+    *   **Password:** `admin123`
+2.  **Using the Token:** Copy the received token. In the Swagger UI, click the `Authorize` button in the top right, type `Bearer ` (with a space), then paste your token.
 
-   ```bash
-   dotnet ef database update
-   ```
+### Interactive Documentation (Swagger)
 
-4. **Run the Application:**
-
-   * Still in the `HRCoreSuite.API` directory, run:
-
-   ```bash
-   dotnet run
-   ```
-
-   * The API is now running and ready to accept requests at `https://localhost:7001` or `http://localhost:5001`.
+Once the application is running, navigate to `https://localhost:[PORT]/swagger` in your browser to access the complete and interactive API documentation. You can test all endpoints from there.
 
 ---
 
 ## Development Roadmap
 
-This project will be developed in phases:
+This project is developed in phases.
 
-* [x] **Phase 1: Employee Data & Contract Management (MVP)**
+*   [x] **Phase 1: Backend Foundation (MVP)**
+    *   [x] Clean Architecture setup.
+    *   [x] CRUD APIs for core entities.
+    *   [x] Security System (JWT Authentication & Authorization).
+    *   [x] Advanced Features: Search, Pagination, Filtering.
+    *   [x] Excel Upload Feature.
+    *   [x] Robust Error Handling & Validation.
 
-  * [ ] Centralized database for employee master data.
-  * [ ] Bulk upload & update via Excel.
-  * [ ] API for CRUD operations on employees, branches, and job positions.
-  * [ ] API for filtering employees based on contract status.
-
-* [ ] **Phase 2: Self-Service & Attendance Management**
-
-  * [ ] Employee Self-Service (ESS) login portal.
-  * [ ] Online leave request and approval module.
-  * [ ] Attendance management module.
+*   [ ] **Phase 2: Frontend & Additional Features**
+    *   [ ] Frontend Development (ASP.NET Core MVC / Razor Pages).
+    *   [ ] Employee Self-Service (ESS) portal.
+    *   [ ] Online leave request and approval module.
 
 * [ ] **Phase 3: Performance & Payroll Management**
 
