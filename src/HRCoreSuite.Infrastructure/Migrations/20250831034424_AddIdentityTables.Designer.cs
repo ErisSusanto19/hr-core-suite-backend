@@ -4,6 +4,7 @@ using HRCoreSuite.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRCoreSuite.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250831034424_AddIdentityTables")]
+    partial class AddIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,18 +103,6 @@ namespace HRCoreSuite.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"),
-                            Name = "HR_Admin"
-                        },
-                        new
-                        {
-                            Id = new Guid("acc5645b-f080-4011-8c98-d7efa3032f52"),
-                            Name = "Super_Admin"
-                        });
                 });
 
             modelBuilder.Entity("HRCoreSuite.Domain.User", b =>
@@ -140,15 +131,6 @@ namespace HRCoreSuite.Infrastructure.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("0b5c1848-fdd1-47bd-a3bf-ccb55ef297ef"),
-                            Email = "admin@hrcoresuite.com",
-                            PasswordHash = "$2a$11$zeibt7oGO6Gl8YgPRSXaBuvGLGMfexe9DD2fwR9DsvwM0FOVmE0xu",
-                            UserName = "admin"
-                        });
                 });
 
             modelBuilder.Entity("HRCoreSuite.Domain.UserRole", b =>
@@ -164,13 +146,6 @@ namespace HRCoreSuite.Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("0b5c1848-fdd1-47bd-a3bf-ccb55ef297ef"),
-                            RoleId = new Guid("acc5645b-f080-4011-8c98-d7efa3032f52")
-                        });
                 });
 
             modelBuilder.Entity("HRCoreSuite.Domain.Employee", b =>

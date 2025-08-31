@@ -9,9 +9,11 @@ using HRCoreSuite.Application.DTOs.Employee;
 using HRCoreSuite.Application.DTOs.Common;
 using System.Net;
 using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HRCoreSuite.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeeController : ControllerBase

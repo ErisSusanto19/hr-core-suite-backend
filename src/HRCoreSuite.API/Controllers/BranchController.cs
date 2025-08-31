@@ -4,9 +4,11 @@ using HRCoreSuite.Domain;
 using HRCoreSuite.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HRCoreSuite.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class BranchController : ControllerBase

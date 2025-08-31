@@ -4,6 +4,7 @@ using HRCoreSuite.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRCoreSuite.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250831060608_SeedInitialRolesAndAdminUser")]
+    partial class SeedInitialRolesAndAdminUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -146,7 +149,7 @@ namespace HRCoreSuite.Infrastructure.Migrations
                         {
                             Id = new Guid("0b5c1848-fdd1-47bd-a3bf-ccb55ef297ef"),
                             Email = "admin@hrcoresuite.com",
-                            PasswordHash = "$2a$11$zeibt7oGO6Gl8YgPRSXaBuvGLGMfexe9DD2fwR9DsvwM0FOVmE0xu",
+                            PasswordHash = "$2a$11$00B6xBQ5JDe6Or7.B6.gzewHfABrfYynr66gdQcRWfvDIN/wiQ7Qa",
                             UserName = "admin"
                         });
                 });
