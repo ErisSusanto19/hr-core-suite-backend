@@ -12,9 +12,13 @@ public class EmployeeProfile : Profile
         CreateMap<UpdateEmployeeDto, Employee>();
 
         CreateMap<Employee, EmployeeResponseDto>()
-            .ForMember(dest => dest.BranchName, 
+            .ForMember(dest => dest.BranchName,
                        opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : string.Empty))
-            .ForMember(dest => dest.PositionName, 
-                       opt => opt.MapFrom(src => src.Position != null ? src.Position.Name : string.Empty));
+            .ForMember(dest => dest.PositionName,
+                       opt => opt.MapFrom(src => src.Position != null ? src.Position.Name : string.Empty))
+            .ForMember(dest => dest.BranchId, 
+                       opt => opt.MapFrom(src => src.BranchId))
+            .ForMember(dest => dest.PositionId, 
+                       opt => opt.MapFrom(src => src.PositionId));
     }
 }

@@ -7,6 +7,8 @@ public class EmployeeResponseDto
     public string Name { get; set; } = string.Empty;
     public DateOnly ContractStartDate { get; set; }
     public DateOnly ContractEndDate { get; set; }
+    public Guid BranchId { get; set; }
     public string BranchName { get; set; } = string.Empty;
+    public Guid PositionId { get; set; }
     public string PositionName { get; set; } = string.Empty;
 }
